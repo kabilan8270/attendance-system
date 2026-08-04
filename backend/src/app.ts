@@ -34,9 +34,33 @@ const app = express();
 
 app.use(helmet());
 
+/**
+ * CLIENT_URL may be a single origin or a comma-separated list, e.g.:
+ *   CLIENT_URL=https://attendance.redlecare.in,https://attendance-system.vercel.app
+ * This lets prod + a Vercel preview/staging URL both work without
+ * reflecting arbitrary origins back (which `origin: true` did).
+ */
+const allowedOrigins = (process.env.CLIENT_URL || "")
+  .split(",")
+  .map((o) => o.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow server-to-server / health checks / curl (no Origin header)
+      if (!origin) return callback(null, true);
+
+      if (
+        allowedOrigins.includes(origin) ||
+        // Allow any Vercel preview deployment for this project
+        /^https:\/\/attendance-system-[a-z0-9-]+\.vercel\.app$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+    },
     credentials: true,
   })
 );

@@ -10,7 +10,6 @@
     "migrate": "node -r ts-node/register src/utils/runMigration.ts"
   },
   "dependencies": {
-    "@supabase/server": "^1.4.1",
     "@supabase/supabase-js": "^2.45.4",
     "@types/jsonwebtoken": "^9.0.6",
     "bcrypt": "^5.1.1",
