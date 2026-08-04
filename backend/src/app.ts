@@ -40,31 +40,39 @@ app.use(helmet());
  * This lets prod + a Vercel preview/staging URL both work without
  * reflecting arbitrary origins back (which `origin: true` did).
  */
-const allowedOrigins = (process.env.CLIENT_URL || "")
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const allowedOrigins = (process.env.CLIENT_URL || "")
   .split(",")
   .map((o) => o.trim().replace(/\/$/, ""))
   .filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow server-to-server / health checks / curl (no Origin header)
-      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/$/, "");
 
+      // Allowed origins from .env
+      if (allowedOrigins.includes(cleanOrigin)) {
+        return callback(null, true);
+      }
+
+      // Allow local network (mobile testing)
+      if (/^http:\/\/192\.168\.\d+\.\d+:5173$/.test(cleanOrigin)) {
+        return callback(null, true);
+      }
+
+      // Allow Vercel preview deployments
       if (
-        allowedOrigins.includes(origin) ||
-        // Allow any Vercel preview deployment for this project
-        /^https:\/\/attendance-system-[a-z0-9-]+\.vercel\.app$/.test(origin)
+        /^https:\/\/attendance-system-[a-z0-9-]+\.vercel\.app$/.test(cleanOrigin)
       ) {
         return callback(null, true);
       }
 
-      return callback(new Error(`Origin ${origin} not allowed by CORS`));
+      return callback(new Error(`Origin ${cleanOrigin} not allowed by CORS`));
     },
     credentials: true,
   })
 );
-
 app.use(hpp());
 
 app.use(cookieParser());
