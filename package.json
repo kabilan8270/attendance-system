@@ -4,12 +4,17 @@
   "description": "Attendance Management Desktop App",
   "main": "electron/main.js",
   "scripts": {
-    "backend": "cd backend && pm2 restart attendance-api || pm2 start dist/server.js --name attendance-api",
-    "frontend": "cd frontend && npm run preview",
-    "electron": "electron .",
-    "start": "concurrently -k \"npm run backend\" \"npm run frontend\" \"wait-on http://127.0.0.1:4173 && npm run electron\"",
-    "dist": "electron-builder"
-  },
+  "backend": "cd backend && pm2 restart attendance-api || pm2 start dist/server.js --name attendance-api",
+  "frontend": "cd frontend && npm run preview",
+  "electron": "electron .",
+  "start": "concurrently -k \"npm run backend\" \"npm run frontend\" \"wait-on http://127.0.0.1:4173 && npm run electron\"",
+
+  "build": "cd backend && npm install && npm run build",
+
+  "railway-start": "cd backend && npm start",
+
+  "dist": "electron-builder"
+},
   "devDependencies": {
     "concurrently": "^9.2.1",
     "electron": "^37.3.1",
