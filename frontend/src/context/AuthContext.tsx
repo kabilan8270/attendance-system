@@ -14,6 +14,14 @@ interface AuthContextValue extends AuthState {
   adminLogin: (adminCode: string, password: string) => Promise<void>;
   employeeLogin: (employeeId: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  /**
+   * Clears the local session (storage + in-memory state) without calling
+   * the single-device /auth/logout endpoint. Used after actions that already
+   * revoke sessions server-side — e.g. "Logout All Devices" or a password
+   * change — so the app's auth state and the server agree immediately
+   * instead of waiting for the next 401 + failed refresh round trip.
+   */
+  clearSession: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -67,8 +75,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setState({ userType: null, user: null, accessToken: null, refreshToken: null });
   };
 
+  const clearSession = () => {
+    clearStoredAuth();
+    setState({ userType: null, user: null, accessToken: null, refreshToken: null });
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, loading, adminLogin, employeeLogin, logout }}>
+    <AuthContext.Provider value={{ ...state, loading, adminLogin, employeeLogin, logout, clearSession }}>
       {children}
     </AuthContext.Provider>
   );

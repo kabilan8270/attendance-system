@@ -66,6 +66,73 @@ export const issueRefreshToken = async (
   return rawToken;
 };
 
+/**
+ * Given the raw refresh token presented on a request, returns the id of the
+ * session row backing it (used so "logout current device" from the Settings
+ * page can mark exactly that row without needing the raw token again).
+ */
+export const getSessionIdForToken = async (rawToken: string): Promise<string | null> => {
+  const tokenHash = hashToken(rawToken);
+  const result = await query(
+    `SELECT id FROM refresh_tokens WHERE token_hash = $1 AND revoked = FALSE`,
+    [tokenHash]
+  );
+  return result.rowCount ? result.rows[0].id : null;
+};
+
+export interface SessionSummary {
+  id: string;
+  deviceInfo: string;
+  ipAddress: string;
+  createdAt: string;
+  expiresAt: string;
+  isCurrent: boolean;
+}
+
+/** Lists all active (non-revoked, non-expired) sessions/devices for a user. */
+export const listActiveSessions = async (
+  userId: string,
+  userType: UserType,
+  currentRawToken?: string
+): Promise<SessionSummary[]> => {
+  const currentHash = currentRawToken ? hashToken(currentRawToken) : null;
+
+  const result = await query(
+    `SELECT id, token_hash, device_info, ip_address, created_at, expires_at
+     FROM refresh_tokens
+     WHERE user_id = $1 AND user_type = $2 AND revoked = FALSE AND expires_at > NOW()
+     ORDER BY created_at DESC`,
+    [userId, userType]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    deviceInfo: row.device_info || 'Unknown device',
+    ipAddress: row.ip_address || '',
+    createdAt: row.created_at,
+    expiresAt: row.expires_at,
+    isCurrent: currentHash !== null && row.token_hash === currentHash,
+  }));
+};
+
+/**
+ * Revokes a single session by its row id, scoped to the owning user so one
+ * user can never revoke another user's session by guessing an id.
+ */
+export const revokeRefreshTokenById = async (
+  sessionId: string,
+  userId: string,
+  userType: UserType
+): Promise<boolean> => {
+  const result = await query(
+    `UPDATE refresh_tokens SET revoked = TRUE
+     WHERE id = $1 AND user_id = $2 AND user_type = $3 AND revoked = FALSE
+     RETURNING id`,
+    [sessionId, userId, userType]
+  );
+  return (result.rowCount ?? 0) > 0;
+};
+
 export const verifyRefreshToken = async (
   rawToken: string
 ): Promise<{ userId: string; userType: UserType } | null> => {

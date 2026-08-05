@@ -64,7 +64,7 @@ npm run dev
 cd backend
 cp .env.example .env        # fill in DATABASE_URL (Supabase connection string), SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, JWT secrets
 npm install
-psql "$DATABASE_URL" -f ../database/schema.sql
+psql "$DATABASE_URL" -f ../database/schema.sql   # or: npm run migrate (runs the same file via DATABASE_URL)
 npx ts-node src/utils/seedAdmin.ts     # creates first super_admin
 npm run dev                  # http://localhost:5000
 ```
@@ -80,7 +80,7 @@ npm run dev                  # http://localhost:5173
 ```
 
 ### First-time configuration (as admin, after logging in)
-1. Log in with the credentials printed by `seedAdmin.ts`. **Change the password immediately.**
+1. Log in with the credentials printed by `seedAdmin.ts`. **Change the password immediately** — go to **Settings** in the admin sidebar (Profile / Security / Active Devices).
 2. Go to **Office Locations** and add at least one location with your office's GPS coordinates and radius — employees cannot check in until this exists.
 3. Add **Departments** and **Shifts**.
 4. Add **Employees**, assign department/shift, then **enroll each employee's face** (webcam capture, no liveness required for enrollment since it's admin-supervised).
@@ -110,6 +110,8 @@ Set `CLIENT_URL` on the backend to your deployed frontend origin (CORS), and
 All routes are prefixed `/api`. Bearer JWT required unless noted.
 
 **Auth** — `/auth`: `POST /admin/login`, `POST /employee/login`, `POST /refresh`, `POST /logout`, `POST /logout-all` (auth), `POST /forgot-password`, `POST /reset-password`, `POST /change-password` (auth)
+
+**Admin Settings** — `/admin` (admin only): `GET /profile`, `PUT /profile` (admin_code, full_name, email — validated & unique), `PUT /change-password` (current/new/confirm, revokes all refresh tokens on success), `GET /sessions` (lists active device sessions; send the raw refresh token via an `X-Refresh-Token` header to flag which one is "this device"), `DELETE /logout-device` (body `{ sessionId }` for a specific listed device, or omit it with `X-Refresh-Token`/body `refreshToken` for "this device"), `DELETE /logout-all`
 
 **Employees** — `/employees`: `GET /me` (employee), `POST /` `GET /` `GET /:id` `PUT /:id` `PATCH /:id/status` `DELETE /:id` `POST /:id/reset-password` `POST /:id/enroll-face` (admin)
 

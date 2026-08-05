@@ -10,6 +10,7 @@ import path from "path";
 import fs from "fs";
 
 import authRoutes from "./routes/auth.routes";
+import adminRoutes from "./routes/admin.routes";
 import employeeRoutes from "./routes/employee.routes";
 import attendanceRoutes from "./routes/attendance.routes";
 import departmentRoutes from "./routes/department.routes";
@@ -119,6 +120,8 @@ app.get("/health", (_req, res) => {
 /* ---------------- API Routes ---------------- */
 
 app.use("/api/auth", authRoutes);
+
+app.use("/api/admin", adminRoutes);
 
 app.use("/api/employees", employeeRoutes);
 

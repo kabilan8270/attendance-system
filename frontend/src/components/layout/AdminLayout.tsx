@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, Users, CalendarCheck, CalendarClock, Building2,
-  MapPin, FileBarChart, Sun, Moon, LogOut, Fingerprint, Bell, CalendarDays,
+  MapPin, FileBarChart, Sun, Moon, LogOut, Fingerprint, Bell, CalendarDays, Settings,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -19,6 +19,7 @@ const navItems = [
   { to: '/admin/departments', label: 'Departments', icon: Building2 },
   { to: '/admin/office-locations', label: 'Office Locations', icon: MapPin },
   { to: '/admin/reports', label: 'Reports', icon: FileBarChart },
+  { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AdminLayout() {

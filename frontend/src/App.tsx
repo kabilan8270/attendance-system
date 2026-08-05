@@ -15,6 +15,7 @@ import AdminHolidays from './pages/admin/HolidayManagement';
 import AdminDepartments from './pages/admin/Departments';
 import AdminOfficeLocations from './pages/admin/OfficeLocations';
 import AdminReports from './pages/admin/Reports';
+import AdminSettings from './pages/admin/Settings';
 
 import EmployeeLayout from './components/layout/EmployeeLayout';
 import EmployeeDashboard from './pages/employee/Dashboard';
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="departments" element={<AdminDepartments />} />
         <Route path="office-locations" element={<AdminOfficeLocations />} />
         <Route path="reports" element={<AdminReports />} />
+        <Route path="settings" element={<AdminSettings />} />
       </Route>
 
       <Route
