@@ -89,3 +89,84 @@ export const verifyEmployeeFace = async (
 
   return { success: true, matchScore: similarity };
 };
+
+
+/**
+ * Matches a live face against all active employees for the public,
+ * login-free attendance kiosk. Liveness is required before matching.
+ */
+export const findActiveEmployeeByFace = async (
+  submittedDescriptor: number[],
+  livenessScore: number,
+  livenessPassed: boolean
+): Promise<{
+  success: boolean;
+  employee?: { id: string; employee_id: string; full_name: string };
+  matchScore?: number;
+  reason?: string;
+}> => {
+  if (!livenessPassed || livenessScore < MIN_LIVENESS_SCORE) {
+    return {
+      success: false,
+      reason: 'Liveness check failed. Please blink naturally and try again.',
+    };
+  }
+
+  if (!Array.isArray(submittedDescriptor) || submittedDescriptor.length !== 128) {
+    return { success: false, reason: 'Invalid face data captured. Please try again.' };
+  }
+
+  const threshold = await getFaceMatchThreshold();
+  const result = await query(
+    `SELECT id, employee_id, full_name, face_descriptor
+     FROM employees
+     WHERE status = 'active' AND face_descriptor IS NOT NULL`
+  );
+
+  let best:
+    | { id: string; employee_id: string; full_name: string; score: number }
+    | null = null;
+
+  for (const row of result.rows) {
+    let storedDescriptor: number[];
+    try {
+      storedDescriptor = Array.isArray(row.face_descriptor)
+        ? row.face_descriptor
+        : JSON.parse(row.face_descriptor);
+    } catch {
+      continue;
+    }
+
+    if (!Array.isArray(storedDescriptor) || storedDescriptor.length !== 128) continue;
+
+    const distance = euclideanDistance(storedDescriptor, submittedDescriptor);
+    const similarity = distanceToSimilarity(distance);
+
+    if (!best || similarity > best.score) {
+      best = {
+        id: row.id,
+        employee_id: row.employee_id,
+        full_name: row.full_name,
+        score: similarity,
+      };
+    }
+  }
+
+  if (!best || best.score < threshold) {
+    return {
+      success: false,
+      matchScore: best?.score,
+      reason: 'Face not recognized. Please contact admin if your face is not enrolled.',
+    };
+  }
+
+  return {
+    success: true,
+    employee: {
+      id: best.id,
+      employee_id: best.employee_id,
+      full_name: best.full_name,
+    },
+    matchScore: best.score,
+  };
+};

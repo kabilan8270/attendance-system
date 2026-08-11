@@ -15,13 +15,17 @@ export default function MarkAttendance() {
   const queryClient = useQueryClient();
 
   const today = new Date().toISOString().split('T')[0];
-  const { data: todayRecord } = useQuery({
-    queryKey: ['my-attendance-today'],
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const { data: attendanceRecords } = useQuery({
+    queryKey: ['my-attendance-today', today],
     queryFn: async () => {
-      const res = await api.get(`/attendance/me?from=${today}&to=${today}`);
-      return res.data.data[0] || null;
+      const res = await api.get(`/attendance/me?from=${yesterday}&to=${today}`);
+      return res.data.data || [];
     },
   });
+
+  const todayRecord = attendanceRecords?.find((record: any) => record.attendance_date === today) || null;
+  const openRecord = attendanceRecords?.find((record: any) => record.check_in_time && !record.check_out_time) || null;
 
   const alreadyCheckedIn = !!todayRecord?.check_in_time;
   const alreadyCheckedOut = !!todayRecord?.check_out_time;
@@ -72,19 +76,26 @@ export default function MarkAttendance() {
         <p className="text-gray-500 dark:text-gray-400 text-sm">Face + location verified check-in</p>
       </div>
 
-      {todayRecord && (
+      {openRecord && (
+        <div className="card space-y-1 text-sm">
+          <p className="font-medium mb-2">Open attendance · {openRecord.attendance_date}</p>
+          <p className="flex justify-between">
+            <span className="text-gray-500">In Time</span>
+            <span className="font-medium">{new Date(openRecord.check_in_time).toLocaleTimeString()}</span>
+          </p>
+          <p className="text-xs text-amber-600">Checkout will update this same attendance record.</p>
+        </div>
+      )}
+
+      {todayRecord && !openRecord && (
         <div className="card space-y-1 text-sm">
           <p className="flex justify-between">
             <span className="text-gray-500">Check-in</span>
-            <span className="font-medium">
-              {todayRecord.check_in_time ? new Date(todayRecord.check_in_time).toLocaleTimeString() : '—'}
-            </span>
+            <span className="font-medium">{todayRecord.check_in_time ? new Date(todayRecord.check_in_time).toLocaleTimeString() : '—'}</span>
           </p>
           <p className="flex justify-between">
             <span className="text-gray-500">Check-out</span>
-            <span className="font-medium">
-              {todayRecord.check_out_time ? new Date(todayRecord.check_out_time).toLocaleTimeString() : '—'}
-            </span>
+            <span className="font-medium">{todayRecord.check_out_time ? new Date(todayRecord.check_out_time).toLocaleTimeString() : '—'}</span>
           </p>
         </div>
       )}
@@ -92,7 +103,7 @@ export default function MarkAttendance() {
       {step === 'idle' && (
         <div className="grid grid-cols-2 gap-4">
           <button
-            disabled={alreadyCheckedIn}
+            disabled={!!openRecord || alreadyCheckedIn}
             onClick={() => beginFlow('check-in')}
             className="card flex flex-col items-center gap-2 py-8 hover:shadow-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
@@ -100,7 +111,7 @@ export default function MarkAttendance() {
             <span className="font-medium">Check In</span>
           </button>
           <button
-            disabled={!alreadyCheckedIn || alreadyCheckedOut}
+            disabled={!openRecord || alreadyCheckedOut}
             onClick={() => beginFlow('check-out')}
             className="card flex flex-col items-center gap-2 py-8 hover:shadow-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
           >

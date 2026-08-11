@@ -23,6 +23,7 @@ import MarkAttendance from './pages/employee/MarkAttendance';
 import AttendanceCalendar from './pages/employee/AttendanceCalendar';
 import LeaveRequests from './pages/employee/LeaveRequests';
 import EmployeeProfile from './pages/employee/Profile';
+import PublicFaceAttendance from './pages/public/FaceAttendance';
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/employee/login" element={<EmployeeLogin />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/face-attendance" element={<PublicFaceAttendance />} />
 
       <Route
         path="/admin"

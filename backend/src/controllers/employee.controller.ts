@@ -101,6 +101,7 @@ export const listEmployees = async (req: Request, res: Response) => {
   const result = await query(
     `SELECT e.id, e.employee_id, e.full_name, e.email, e.mobile_number, e.designation,
             e.joining_date, e.status, e.face_image_url, e.profile_photo_url,
+            e.department_id, e.shift_id,
             d.name AS department_name, s.name AS shift_name
      FROM employees e
      LEFT JOIN departments d ON d.id = e.department_id

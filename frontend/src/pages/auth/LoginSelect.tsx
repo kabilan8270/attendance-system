@@ -16,7 +16,19 @@ export default function LoginSelect() {
           <p className="text-gray-500 dark:text-gray-400 mt-2">Face-verified, GPS-secured, enterprise ready</p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link to="/face-attendance" className="card group hover:shadow-xl hover:-translate-y-1 transition-all duration-200 border-2 border-indigo-100 dark:border-indigo-900/40">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+                <Fingerprint className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-lg">Face Attendance</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Mark attendance without employee login</p>
+              </div>
+            </div>
+          </Link>
+
           <Link to="/admin/login" className="card group hover:shadow-xl hover:-translate-y-1 transition-all duration-200">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">

@@ -5,11 +5,15 @@ import {
   getMyAttendance,
   getAttendanceAdmin,
   adminUpsertAttendance,
+  publicFaceAttendance,
 } from '../controllers/attendance.controller';
 import { authenticate, requireUserType, requireRole } from '../middleware/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
+
+// Public kiosk endpoint: no employee/admin login required.
+router.post('/public-face', asyncHandler(publicFaceAttendance));
 
 router.use(authenticate);
 

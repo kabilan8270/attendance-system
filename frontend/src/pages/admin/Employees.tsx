@@ -12,6 +12,7 @@ export default function AdminEmployees() {
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [faceEnrollId, setFaceEnrollId] = useState<string | null>(null);
+  const [editEmployee, setEditEmployee] = useState<any | null>(null);
   const queryClient = useQueryClient();
 
   const { data: employees, isLoading } = useQuery({
@@ -34,6 +35,40 @@ export default function AdminEmployees() {
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['employees'] });
+
+  const openEdit = (emp: any) => {
+    setEditEmployee({
+      id: emp.id,
+      fullName: emp.full_name || '',
+      email: emp.email || '',
+      mobileNumber: emp.mobile_number || '',
+      departmentId: emp.department_id || '',
+      designation: emp.designation || '',
+      joiningDate: emp.joining_date ? String(emp.joining_date).slice(0, 10) : '',
+      shiftId: emp.shift_id || '',
+    });
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editEmployee) return;
+    try {
+      await api.put(`/employees/${editEmployee.id}`, {
+        fullName: editEmployee.fullName,
+        email: editEmployee.email,
+        mobileNumber: editEmployee.mobileNumber,
+        departmentId: editEmployee.departmentId || null,
+        designation: editEmployee.designation || null,
+        joiningDate: editEmployee.joiningDate,
+        shiftId: editEmployee.shiftId || null,
+      });
+      toast.success('Employee updated successfully');
+      setEditEmployee(null);
+      refresh();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to update employee');
+    }
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +142,7 @@ export default function AdminEmployees() {
         <input className="input pl-9" placeholder="Search by name, ID or email" value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
-      <div className="card overflow-x-auto">
+      <div className="hidden md:block card overflow-x-auto">
         {isLoading ? (
           <p className="text-gray-400 text-sm">Loading...</p>
         ) : (
@@ -140,6 +175,9 @@ export default function AdminEmployees() {
                   </td>
                   <td className="py-2.5">
                     <div className="flex items-center gap-1">
+                      <button title="Edit employee" onClick={() => openEdit(emp)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+                        <Pencil className="w-4 h-4 text-blue-600" />
+                      </button>
                       <button title="Enroll face" onClick={() => setFaceEnrollId(emp.id)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
                         <Fingerprint className="w-4 h-4 text-indigo-600" />
                       </button>
@@ -162,8 +200,50 @@ export default function AdminEmployees() {
         {employees && employees.length === 0 && <p className="text-center text-gray-400 py-8 text-sm">No employees found</p>}
       </div>
 
+      <div className="space-y-3 md:hidden">
+        {employees?.map((emp: any) => (
+          <div key={`mobile-${emp.id}`} className="card p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold truncate">{emp.full_name}</p>
+                <p className="text-xs text-gray-500 font-mono mt-0.5">{emp.employee_id}</p>
+              </div>
+              <StatusBadge status={emp.status} />
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
+              <div><span className="text-gray-500">Department</span><p>{emp.department_name || '—'}</p></div>
+              <div><span className="text-gray-500">Shift</span><p>{emp.shift_name || '—'}</p></div>
+              <div><span className="text-gray-500">Face</span><p>{emp.face_image_url ? 'Enrolled' : 'Not enrolled'}</p></div>
+              <div><span className="text-gray-500">Email</span><p className="truncate">{emp.email}</p></div>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <button onClick={() => openEdit(emp)} className="btn-secondary text-xs"><Pencil className="w-3.5 h-3.5" /> Edit</button>
+              <button onClick={() => setFaceEnrollId(emp.id)} className="btn-secondary text-xs"><Fingerprint className="w-3.5 h-3.5" /> Face</button>
+              <button onClick={() => resetPassword(emp.id)} className="btn-secondary text-xs"><KeyRound className="w-3.5 h-3.5" /> Password</button>
+              <button onClick={() => toggleStatus(emp.id, emp.status)} className="btn-secondary text-xs">{emp.status === 'active' ? <Ban className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />} {emp.status === 'active' ? 'Disable' : 'Enable'}</button>
+              <button onClick={() => deleteEmployee(emp.id)} className="btn-danger text-xs"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <Modal open={!!editEmployee} onClose={() => setEditEmployee(null)} title="Edit Employee" wide>
+        {editEmployee && (
+          <form onSubmit={handleEdit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div><label className="label">Full Name</label><input className="input" required value={editEmployee.fullName} onChange={(e) => setEditEmployee({ ...editEmployee, fullName: e.target.value })} /></div>
+            <div><label className="label">Email</label><input type="email" className="input" required value={editEmployee.email} onChange={(e) => setEditEmployee({ ...editEmployee, email: e.target.value })} /></div>
+            <div><label className="label">Mobile Number</label><input className="input" required value={editEmployee.mobileNumber} onChange={(e) => setEditEmployee({ ...editEmployee, mobileNumber: e.target.value })} /></div>
+            <div><label className="label">Designation</label><input className="input" value={editEmployee.designation} onChange={(e) => setEditEmployee({ ...editEmployee, designation: e.target.value })} /></div>
+            <div><label className="label">Department</label><select className="input" value={editEmployee.departmentId} onChange={(e) => setEditEmployee({ ...editEmployee, departmentId: e.target.value })}><option value="">—</option>{departments?.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
+            <div><label className="label">Shift</label><select className="input" value={editEmployee.shiftId} onChange={(e) => setEditEmployee({ ...editEmployee, shiftId: e.target.value })}><option value="">—</option>{shifts?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+            <div><label className="label">Joining Date</label><input type="date" className="input" required value={editEmployee.joiningDate} onChange={(e) => setEditEmployee({ ...editEmployee, joiningDate: e.target.value })} /></div>
+            <div className="sm:col-span-2"><button type="submit" className="btn-primary w-full">Save Changes</button></div>
+          </form>
+        )}
+      </Modal>
+
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Add Employee" wide>
-        <form onSubmit={handleAdd} className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleAdd} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div><label className="label">Employee ID</label><input className="input" required value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })} /></div>
           <div><label className="label">Full Name</label><input className="input" required value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} /></div>
           <div><label className="label">Email</label><input type="email" className="input" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
@@ -184,7 +264,7 @@ export default function AdminEmployees() {
           </div>
           <div><label className="label">Designation</label><input className="input" value={form.designation} onChange={(e) => setForm({ ...form, designation: e.target.value })} /></div>
           <div><label className="label">Joining Date</label><input type="date" className="input" required value={form.joiningDate} onChange={(e) => setForm({ ...form, joiningDate: e.target.value })} /></div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <button type="submit" className="btn-primary w-full">Create Employee</button>
           </div>
         </form>
