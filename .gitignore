@@ -18,3 +18,5 @@ release/
 Thumbs.db
 .DS_Store
 *.tsbuildinfo
+
+*.before-punch-backup
