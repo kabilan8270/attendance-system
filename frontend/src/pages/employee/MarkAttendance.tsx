@@ -14,8 +14,12 @@ export default function MarkAttendance() {
   const { getLocation, error: geoError } = useGeolocation();
   const queryClient = useQueryClient();
 
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+  const yesterday = (() => {
+    const d = new Date(`${today}T12:00:00+05:30`);
+    d.setDate(d.getDate() - 1);
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(d);
+  })();
   const { data: attendanceRecords } = useQuery({
     queryKey: ['my-attendance-today', today],
     queryFn: async () => {
@@ -27,7 +31,10 @@ export default function MarkAttendance() {
   const todayRecord = attendanceRecords?.find((record: any) => record.attendance_date === today) || null;
   const openRecord = attendanceRecords?.find((record: any) => record.check_in_time && !record.check_out_time) || null;
 
-  const alreadyCheckedIn = !!todayRecord?.check_in_time;
+  // An open record from yesterday can be an overnight shift. In that case
+  // the morning punch must be treated as check-out for the same record.
+  const hasOpenOvernightRecord = !!openRecord && openRecord.attendance_date !== today;
+  const alreadyCheckedIn = !!todayRecord?.check_in_time || !!openRecord;
   const alreadyCheckedOut = !!todayRecord?.check_out_time;
 
   const beginFlow = async (selectedMode: 'check-in' | 'check-out') => {
@@ -83,7 +90,7 @@ export default function MarkAttendance() {
             <span className="text-gray-500">In Time</span>
             <span className="font-medium">{new Date(openRecord.check_in_time).toLocaleTimeString()}</span>
           </p>
-          <p className="text-xs text-amber-600">Checkout will update this same attendance record.</p>
+          <p className="text-xs text-amber-600">{hasOpenOvernightRecord ? 'Morning punch will check out this same overnight attendance.' : 'Checkout will update this same attendance record.'}</p>
         </div>
       )}
 
