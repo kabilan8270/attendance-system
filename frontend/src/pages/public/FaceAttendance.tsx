@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import FaceCapture from '../../components/attendance/FaceCapture';
 import { api } from '../../api/client';
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { formatISTTime } from '../../utils/date';
 
 type Result = {
   action: 'IN' | 'OUT';
@@ -113,8 +114,8 @@ export default function PublicFaceAttendance() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <p className="flex justify-between"><span className="text-gray-500">In Time</span><span>{result.data.check_in_time ? new Date(result.data.check_in_time).toLocaleTimeString() : '—'}</span></p>
-              <p className="flex justify-between"><span className="text-gray-500">Out Time</span><span>{result.data.check_out_time ? new Date(result.data.check_out_time).toLocaleTimeString() : '—'}</span></p>
+              <p className="flex justify-between"><span className="text-gray-500">In Time</span><span>{formatISTTime(result.data.check_in_time)}</span></p>
+              <p className="flex justify-between"><span className="text-gray-500">Out Time</span><span>{formatISTTime(result.data.check_out_time)}</span></p>
             </div>
 
             <p className="text-sm text-green-600 font-medium">{result.message}</p>

@@ -4,6 +4,7 @@ import { Download, FileText } from 'lucide-react';
 import { api } from '../../api/client';
 import StatusBadge from '../../components/ui/StatusBadge';
 import { Department } from '../../types';
+import { formatISTTime } from '../../utils/date';
 
 export default function AdminAttendance() {
   const [filters, setFilters] = useState({
@@ -89,8 +90,8 @@ export default function AdminAttendance() {
                   <td className="py-2.5 pr-4">{row.full_name} <span className="text-xs text-gray-400">({row.employee_code})</span></td>
                   <td className="py-2.5 pr-4">{row.department_name || '—'}</td>
                   <td className="py-2.5 pr-4">{row.attendance_date}</td>
-                  <td className="py-2.5 pr-4">{row.check_in_time ? new Date(row.check_in_time).toLocaleTimeString() : '—'}</td>
-                  <td className="py-2.5 pr-4">{row.check_out_time ? new Date(row.check_out_time).toLocaleTimeString() : '—'}</td>
+                  <td className="py-2.5 pr-4">{formatISTTime(row.check_in_time)}</td>
+                  <td className="py-2.5 pr-4">{formatISTTime(row.check_out_time)}</td>
                   <td className="py-2.5 pr-4">{row.working_hours || '—'}</td>
                   <td className="py-2.5"><StatusBadge status={row.status} /></td>
                 </tr>

@@ -3,17 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../../api/client';
 import { AttendanceRecord } from '../../types';
+import { formatISTTime, formatISTTimeCompact } from '../../utils/date';
 
-const formatTime = (value: string | null) =>
-  value
-    ? new Date(value).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
-    : '—';
+// Times are always shown in Asia/Kolkata, regardless of the viewer's browser timezone.
+const formatTime = formatISTTime;
 
 // Compact time used inside the 7-column calendar so In/Out remain readable on phones.
-const formatCalendarTime = (value: string | null) =>
-  value
-    ? new Date(value).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: false })
-    : '—';
+const formatCalendarTime = formatISTTimeCompact;
 
 const statusColor: Record<string, string> = {
   present: 'bg-green-500',
