@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { query } from '../config/db';
 import { logAudit } from '../services/audit.service';
+import { DEFAULT_DUTY_HOURS } from '../services/attendance.service';
 
 const getIp = (req: Request): string =>
   (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '';
@@ -14,15 +15,25 @@ export const createShift = async (req: Request, res: Response) => {
   if (!req.user || req.user.userType !== 'admin') {
     return res.status(403).json({ success: false, message: 'Forbidden' });
   }
-  const { name, startTime, endTime, gracePeriodMinutes, isOvernight } = req.body;
+  const { name, startTime, endTime, gracePeriodMinutes, isOvernight, dutyHours } = req.body;
   if (!name || !startTime || !endTime) {
     return res.status(400).json({ success: false, message: 'name, startTime and endTime are required' });
   }
+  if (dutyHours !== undefined && (Number.isNaN(Number(dutyHours)) || Number(dutyHours) <= 0)) {
+    return res.status(400).json({ success: false, message: 'dutyHours must be a positive number' });
+  }
 
   const result = await query(
-    `INSERT INTO shifts (name, start_time, end_time, grace_period_minutes, is_overnight)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [name, startTime, endTime, gracePeriodMinutes ?? 15, isOvernight ?? false]
+    `INSERT INTO shifts (name, start_time, end_time, grace_period_minutes, is_overnight, duty_hours)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [
+      name,
+      startTime,
+      endTime,
+      gracePeriodMinutes ?? 15,
+      isOvernight ?? false,
+      dutyHours !== undefined ? Number(dutyHours) : DEFAULT_DUTY_HOURS,
+    ]
   );
   await logAudit(req.user.id, 'admin', 'CREATE_SHIFT', 'shifts', result.rows[0].id, { name }, getIp(req));
   return res.status(201).json({ success: true, data: result.rows[0] });
@@ -33,7 +44,11 @@ export const updateShift = async (req: Request, res: Response) => {
     return res.status(403).json({ success: false, message: 'Forbidden' });
   }
   const { id } = req.params;
-  const { name, startTime, endTime, gracePeriodMinutes, isOvernight } = req.body;
+  const { name, startTime, endTime, gracePeriodMinutes, isOvernight, dutyHours } = req.body;
+
+  if (dutyHours !== undefined && (Number.isNaN(Number(dutyHours)) || Number(dutyHours) <= 0)) {
+    return res.status(400).json({ success: false, message: 'dutyHours must be a positive number' });
+  }
 
   const result = await query(
     `UPDATE shifts SET
@@ -41,9 +56,19 @@ export const updateShift = async (req: Request, res: Response) => {
        start_time = COALESCE($2, start_time),
        end_time = COALESCE($3, end_time),
        grace_period_minutes = COALESCE($4, grace_period_minutes),
-       is_overnight = COALESCE($5, is_overnight)
-     WHERE id = $6 RETURNING *`,
-    [name || null, startTime || null, endTime || null, gracePeriodMinutes ?? null, isOvernight ?? null, id]
+       is_overnight = COALESCE($5, is_overnight),
+       duty_hours = COALESCE($6, duty_hours),
+       updated_at = NOW()
+     WHERE id = $7 RETURNING *`,
+    [
+      name || null,
+      startTime || null,
+      endTime || null,
+      gracePeriodMinutes ?? null,
+      isOvernight ?? null,
+      dutyHours !== undefined ? Number(dutyHours) : null,
+      id,
+    ]
   );
   if (result.rowCount === 0) return res.status(404).json({ success: false, message: 'Shift not found' });
 

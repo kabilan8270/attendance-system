@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import {
-  checkIn,
-  checkOut,
+  markAttendance,
   getMyAttendance,
   getAttendanceAdmin,
   adminUpsertAttendance,
@@ -18,8 +17,8 @@ router.post('/public-face', asyncHandler(publicFaceAttendance));
 router.use(authenticate);
 
 // Employee endpoints
-router.post('/check-in', requireUserType('employee'), asyncHandler(checkIn));
-router.post('/check-out', requireUserType('employee'), asyncHandler(checkOut));
+// Single "Mark Attendance" action — the backend decides IN vs OUT.
+router.post('/punch', requireUserType('employee'), asyncHandler(markAttendance));
 router.get('/me', requireUserType('employee'), asyncHandler(getMyAttendance));
 
 // Admin endpoints

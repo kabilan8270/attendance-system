@@ -32,6 +32,15 @@ export interface AttendanceRecord {
   department_name?: string;
 }
 
+// Response shape from POST /attendance/punch and POST /attendance/public-face.
+// The backend — never the frontend — decides whether a punch was an IN or an OUT.
+export interface PunchResponse {
+  success: boolean;
+  action: 'IN' | 'OUT';
+  message: string;
+  data: AttendanceRecord;
+}
+
 export type LeaveType = 'casual' | 'medical' | 'paid' | 'unpaid' | 'emergency';
 export type LeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
@@ -76,6 +85,7 @@ export interface Shift {
   end_time: string;
   grace_period_minutes: number;
   is_overnight: boolean;
+  duty_hours: number;
 }
 
 export interface Holiday {
