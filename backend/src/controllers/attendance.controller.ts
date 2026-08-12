@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { query } from '../config/db';
 import { verifyWithinOfficeGeofence } from '../services/geo.service';
 import { verifyEmployeeFace, findActiveEmployeeByFace } from '../services/face.service';
+import { processAttendancePunch } from '../services/attendance.service';
 import { logAudit } from '../services/audit.service';
 
 const getIp = (req: Request): string =>
